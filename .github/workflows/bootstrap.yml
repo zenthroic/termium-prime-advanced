@@ -22,7 +22,7 @@ jobs:
         working-directory: tp
         run: |
           ./scripts/run-docker.sh ./scripts/generate-bootstraps.sh --architectures aarch64 --repository "file:///home/builder/termux-packages/output"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: bootstrap-aarch64
           path: tp/bootstrap-aarch64.zip
