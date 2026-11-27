@@ -1,0 +1,28 @@
+name: Build bootstrap (in.termium)
+on: workflow_dispatch
+jobs:
+  bootstrap:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Clone termux-packages and retarget prefix
+        run: |
+          git clone --depth 1 https://github.com/termux/termux-packages.git tp
+          cd tp
+          grep -rIl "com\.termux" scripts *.sh 2>/dev/null | xargs sed -i 's#com\.termux#in.termium#g'
+      - name: Build bootstrap packages from source for the new prefix
+        working-directory: tp
+        run: |
+          ./scripts/run-docker.sh bash -c '
+            for p in apt bash busybox coreutils dash dpkg findutils gawk grep gzip less procps psmisc sed tar termux-exec termux-keyring termux-tools util-linux; do
+              ./build-package.sh -a aarch64 -I "$p"
+            done'
+      - name: Generate bootstrap zip from the locally built packages
+        working-directory: tp
+        run: |
+          ./scripts/run-docker.sh ./scripts/generate-bootstraps.sh --architectures aarch64 --repository "file:///home/builder/termux-packages/output"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-aarch64
+          path: tp/bootstrap-aarch64.zip
